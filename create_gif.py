@@ -121,8 +121,11 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
 
     # Define the duration range (in seconds)
     target_duration_seconds = 10
-    fps = round(len(movies) / target_duration_seconds)
-
+    # How long to stay on the final frame for (in seconds)
+    final_frame_duration = 1
+    # MP4s don't loop by default. This allows you to calculate how many times
+    # the generated MP4 will 'loop' by having the same set of frames repeated.
+    num_loops = 3
     # How many frames to turn each frame into to give us wiggle room to ease
     # duration. At a scale effect of 2 we have len(frames) extra frames to work
     # with. Must be >= 1. Treat this as the "strength" of the easing function.
@@ -136,6 +139,9 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
         t = i / (num_frames - 1)  # Normalized time between 0 and 1
         eased_t = ease(t)  # Apply easing function
         durations.append(eased_t)
+
+    # Calculate FPS
+    fps = round(len(movies) / target_duration_seconds)
     
     # Duplicate frames based on their durations
     num_frames = len(frames)
@@ -145,10 +151,12 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
         frame = frames[i]
         t = i / (num_frames - 1)  # Normalized time between 0 and 1
         num_repetitions = int(1 + (durations[i] / total_duration) * ((scale_effect - 1) * num_frames))
+
+        if i == num_frames - 1:
+            num_repetitions = int(fps * scale_effect * final_frame_duration)
         duplicated_frames.extend([frame] * num_repetitions)
 
     # Save the frames as an animated mp4
-    num_loops = 1
     imageio.mimsave('animation.mp4', duplicated_frames * num_loops, fps=fps * scale_effect)
 
 # Example usage
