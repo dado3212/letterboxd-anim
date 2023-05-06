@@ -2,6 +2,8 @@
 
 Make animations out of your Letterboxd profile. Currently this will take all films that you've given a rating to in your diary, sort it by time, and then render the distribution as it evolves. There's a number of settings in the script that you can tweak to generate the video.
 
+https://user-images.githubusercontent.com/8919256/236648196-ee632a7f-213f-4ab1-94bb-ddde9a6b59d9.mp4
+
 ## Run Instructions
 I needed to import `imageio` to generate the MP4 file using the following two commands on Windows:
 ```
