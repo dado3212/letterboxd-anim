@@ -70,18 +70,34 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
             highest = count
 
     box_width = 17
-    max_height = 44
+    box_max_height = 44
 
     offset = 15
 
+    # Draw the boxes
     for count in boxes:
         draw.rectangle((
             offset,
             height + 1,
             offset + box_width,
-            height - (max_height * 1.0 * count / highest) - 1
+            height - (box_max_height * 1.0 * count / highest) - 1
         ), fill='#678')
         offset += box_width + 2
+
+    # Draw the stars
+    star_font = ImageFont.truetype("fonts/seguisym.ttf", size=12)
+    text = '★'
+    text_bbox = draw.textbbox((0, 0), text, font=star_font)
+    text_start_height = text_bbox[1]
+    text_height = text_bbox[3]
+    draw.text((1, height - text_height - 1), text, font=star_font, fill='#00c030')
+
+    text = '★★★★★'
+    text_bbox = draw.textbbox((0, 0), text, font=star_font)
+    text_width = text_bbox[2]
+    text_height = text_bbox[3]
+    draw.text((width - text_width, height - text_height - 1), text, font=star_font, fill='#00c030')
+
 
     # Append the frame to the list
     return frame
@@ -125,7 +141,7 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
     final_frame_duration = 1
     # MP4s don't loop by default. This allows you to calculate how many times
     # the generated MP4 will 'loop' by having the same set of frames repeated.
-    num_loops = 3
+    num_loops = 1
     # How many frames to turn each frame into to give us wiggle room to ease
     # duration. At a scale effect of 2 we have len(frames) extra frames to work
     # with. Must be >= 1. Treat this as the "strength" of the easing function.
