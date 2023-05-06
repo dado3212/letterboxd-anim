@@ -1,4 +1,4 @@
-import csv, copy, imageio
+import csv, copy, imageio, math
 from typing import TypedDict, Optional, Any
 from PIL import Image, ImageDraw, ImageFont
 
@@ -28,10 +28,10 @@ def parse_letterboxd_history(csv_file: str) -> dict[str, list[Movie]]:
     return movies
 
 # For a current distribution of movies, creates a single Image frame
-def create_image(bucket_info: dict[float, list[Movie]], count: int):
+def create_image(bucket_info: dict[float, list[Movie]], count: int, scale: int):
     # Dimensions of the frames and GIF
-    width: int = 256 # actually 250 on the website
-    height: int = 80
+    width: int = 256 * scale # actually 250 on the website
+    height: int = 80 * scale
 
     frame = Image.new('RGB', (width, height), '#14181c')
 
@@ -40,7 +40,7 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
 
     # Draw the ratings text
     text = 'RATINGS'
-    font = ImageFont.truetype("fonts/Graphik-Regular-Web.woff", size=13)
+    font = ImageFont.truetype("fonts/Graphik-Regular-Web.woff", size=13 * scale)
     text_bbox = draw.textbbox((0, 0), text, font=font)
     text_start_height = text_bbox[1]
     text_height = text_bbox[3]
@@ -48,16 +48,16 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
 
     # Draw the number of reviews text
     text = str(count)
-    font = ImageFont.truetype("fonts/Graphik-Regular-Web.woff", size=11)
+    font = ImageFont.truetype("fonts/Graphik-Regular-Web.woff", size=11 * scale)
     text_bbox = draw.textbbox((0, 0), text, font=font)
 
-    draw.text((width - text_bbox[2] - 1, text_start_height + text_height - text_bbox[3]), text, font=font, fill='#678')
+    draw.text((width - text_bbox[2] - 1 * scale, text_start_height + text_height - text_bbox[3]), text, font=font, fill='#678')
 
     # Draw the underline
     draw.line(
-        (0, text_height + text_start_height + 5, width, text_height + text_start_height + 5),
+        (0, text_height + text_start_height + 2 * scale, width, text_height + text_start_height + 2 * scale),
         fill='#456',
-        width=1
+        width=1 * scale
     )
 
     # Calculate the boxes that we're going to draw
@@ -69,10 +69,10 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
         if (count > highest):
             highest = count
 
-    box_width = 17
-    box_max_height = 44
+    box_width = 17 * scale
+    box_max_height = 44 * scale
 
-    offset = 15
+    offset = 15 * scale
 
     # Draw the boxes
     for count in boxes:
@@ -82,32 +82,53 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
             offset + box_width,
             height - (box_max_height * 1.0 * count / highest) - 1
         ), fill='#678')
-        offset += box_width + 2
+        offset += box_width + 2 * scale
 
     # Draw the stars
-    star_font = ImageFont.truetype("fonts/seguisym.ttf", size=12)
+    star_font = ImageFont.truetype("fonts/seguisym.ttf", size=12*scale)
     text = '★'
     text_bbox = draw.textbbox((0, 0), text, font=star_font)
     text_start_height = text_bbox[1]
     text_height = text_bbox[3]
-    draw.text((1, height - text_height - 1), text, font=star_font, fill='#00c030')
+    draw.text((1 * scale, height - text_height - 1), text, font=star_font, fill='#00c030')
 
     text = '★★★★★'
     text_bbox = draw.textbbox((0, 0), text, font=star_font)
     text_width = text_bbox[2]
     text_height = text_bbox[3]
-    draw.text((width - text_width, height - text_height - 1), text, font=star_font, fill='#00c030')
-
+    draw.text((width - text_width, height - text_height - 1 * scale), text, font=star_font, fill='#00c030')
 
     # Append the frame to the list
     return frame
 
 # Define the easing function
 def ease(t: float) -> float:
-    return (1-t) ** 2
+    if t < 0.05:
+        return 1
+    elif t < 0.2:
+        return 1 - ((t - 0.05) / 0.15)
+    elif t < 0.95:
+        return 0
+    else:
+        return (t - 0.95) / 0.05
 
 # Takes in a list of movies and creates an animation
 def create_and_save_animation(movies: dict[str, list[Movie]]):
+    # Define the duration range (in seconds)
+    target_duration_seconds = 10
+    # How long to stay on the final frame for (in seconds)
+    final_frame_duration = 1
+    # MP4s don't loop by default. This allows you to calculate how many times
+    # the generated MP4 will 'loop' by having the same set of frames repeated.
+    num_loops = 1
+    # Scale the created video. With a default scale of 1 it will generate 
+    # a video with the dimensions of 256x80.
+    scale_image = 4
+    # How many frames to turn each frame into to give us wiggle room to ease
+    # duration. At a scale effect of 2 we have len(frames) extra frames to work
+    # with. Must be >= 1. Treat this as the "strength" of the easing function.
+    scale_effect: int = 2
+
     animation_slices: list[dict[float, list[Movie]]] = []
 
     current_buckets: dict[float, list[Movie]] = {
@@ -133,19 +154,7 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
     # Create a list to store frames
     frames: list[Any] = []
     for i, slice in enumerate(animation_slices):
-        frames.append(create_image(slice, i + 1))
-
-    # Define the duration range (in seconds)
-    target_duration_seconds = 10
-    # How long to stay on the final frame for (in seconds)
-    final_frame_duration = 1
-    # MP4s don't loop by default. This allows you to calculate how many times
-    # the generated MP4 will 'loop' by having the same set of frames repeated.
-    num_loops = 1
-    # How many frames to turn each frame into to give us wiggle room to ease
-    # duration. At a scale effect of 2 we have len(frames) extra frames to work
-    # with. Must be >= 1. Treat this as the "strength" of the easing function.
-    scale_effect: int = 5
+        frames.append(create_image(slice, i + 1, scale_image))
 
     # Calculate durations for each frame. Effectively this ends up just being
     # calculating the easing function for each frame
