@@ -1,4 +1,4 @@
-import csv, copy, imageio, math
+import csv, copy, imageio
 from typing import TypedDict, Optional, Any
 from PIL import Image, ImageDraw, ImageFont
 
