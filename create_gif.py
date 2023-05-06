@@ -1,4 +1,4 @@
-import csv, copy, imageio
+import csv, copy, imageio, math
 from typing import TypedDict, Optional, Any
 from PIL import Image, ImageDraw, ImageFont
 
@@ -88,9 +88,7 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int):
 
 # Define the easing function
 def ease(t: float) -> float:
-    # Modify this function to customize the easing effect
-    return t  # Linear easing, change to a different easing function as desired
-
+    return (1-t) ** 2
 
 # Takes in a list of movies and creates an animation
 def create_and_save_animation(movies: dict[str, list[Movie]]):
@@ -122,29 +120,36 @@ def create_and_save_animation(movies: dict[str, list[Movie]]):
         frames.append(create_image(slice, i + 1))
 
     # Define the duration range (in seconds)
-    min_duration = 0.1
-    max_duration = 0.5
-    target_duration_seconds = 5
+    target_duration_seconds = 10
     fps = round(len(movies) / target_duration_seconds)
-    
-    # Calculate the easing durations for each frame
+
+    # How many frames to turn each frame into to give us wiggle room to ease
+    # duration. At a scale effect of 2 we have len(frames) extra frames to work
+    # with. Must be >= 1. Treat this as the "strength" of the easing function.
+    scale_effect: int = 5
+
+    # Calculate durations for each frame. Effectively this ends up just being
+    # calculating the easing function for each frame
     num_frames = len(frames)
     durations: list[float] = []
     for i in range(num_frames):
         t = i / (num_frames - 1)  # Normalized time between 0 and 1
         eased_t = ease(t)  # Apply easing function
-        duration = min_duration + (max_duration - min_duration) * eased_t
-        durations.append(duration)
-
+        durations.append(eased_t)
+    
     # Duplicate frames based on their durations
+    num_frames = len(frames)
+    total_duration = sum(durations)
     duplicated_frames: list[Any] = []
-    for frame, duration in zip(frames, durations):
-        num_repetitions = int(duration * fps)
+    for i in range(num_frames):
+        frame = frames[i]
+        t = i / (num_frames - 1)  # Normalized time between 0 and 1
+        num_repetitions = int(1 + (durations[i] / total_duration) * ((scale_effect - 1) * num_frames))
         duplicated_frames.extend([frame] * num_repetitions)
 
     # Save the frames as an animated mp4
     num_loops = 1
-    imageio.mimsave('animation.mp4', frames * num_loops, fps=fps)
+    imageio.mimsave('animation.mp4', duplicated_frames * num_loops, fps=fps * scale_effect)
 
 # Example usage
 movies = parse_letterboxd_history('export/diary.csv')
