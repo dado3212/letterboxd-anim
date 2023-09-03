@@ -13,6 +13,8 @@ python3 -m pip install imageio[ffmpeg]
 
 Then log in to your Letterboxd account and go to https://letterboxd.com/settings/data/. Export your data, and then copy the full contents of the `.zip` into the `export` folder. Then run `python3 .\create_gif.py`.
 
+Alternatively if you're trying to create a monthly summary screenshot, open `python3 .\build_diary.py` and modify the `with_photos` line to whatever month you're trying to generate (note that this may fail if you watch more movies in a month than can render on one page in Letterboxd). Once this is done you can run `python3 .\build_diary.py` which will create an `index.html` file of whatever month you've specified. It will automatically lay it out to take advantage of the size of the window.
+
 ## Thanks
 
 Thanks to Letterboxd for being a great service, and for the use of the [font](https://s.ltrbxd.com/fonts/Graphik-Regular-Web.woff) used for replicating the UI. All rights go to Letterboxd.
