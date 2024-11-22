@@ -3,4 +3,5 @@ export/*
 *.zip
 *.watchman*
 .DS_Store
+venv
 index.html

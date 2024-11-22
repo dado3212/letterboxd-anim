@@ -245,5 +245,5 @@ def create_website(movies: dict[str, Movie]):
 
 movies = parse_letterboxd_history('export/diary.csv', 'export/likes/films.csv')
 # Set this to whatever month you want
-movies = with_photos(movies, 'https://letterboxd.com/dado3212/films/diary/for/2023/08/')
+movies = with_photos(movies, 'https://letterboxd.com/dado3212/films/diary/for/2024/08/')
 create_website(movies)

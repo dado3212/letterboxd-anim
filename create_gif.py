@@ -78,9 +78,9 @@ def create_image(bucket_info: dict[float, list[Movie]], count: int, scale: int):
     for count in boxes:
         draw.rectangle((
             offset,
-            height + 1,
+            height - (box_max_height * 1.0 * count / highest) - 1,
             offset + box_width,
-            height - (box_max_height * 1.0 * count / highest) - 1
+            height + 1,
         ), fill='#678')
         offset += box_width + 2 * scale
 
