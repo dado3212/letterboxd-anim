@@ -64,15 +64,15 @@ def with_photos(all_movies: dict[str, Movie], month_url: str) -> dict[str, Movie
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    review_buttons = soup.find_all('a', class_='edit-review-button')
+    all_reviews = soup.find_all('tr', class_='diary-entry-row')
 
-    for review_button in review_buttons:
-        name = review_button.get('data-film-name')
-        year = review_button.get('data-film-year')
-        raw_poster = review_button.get('data-film-poster')
+    for review in all_reviews:
+        film_poster = review.find('div', class_='linked-film-poster')
+        name = next(review.find('h3', class_='headline-3').children).contents[0]
+        year = next(review.find('td', class_='td-released').children).contents[0]
 
         # 300x450
-        poster_uri = 'https://letterboxd.com/ajax/poster/film/' + raw_poster.split("/")[2] + '/std/500x750/'
+        poster_uri = 'https://letterboxd.com/ajax/poster/film/' + film_poster.get('data-film-slug') + '/std/500x750/'
         poster_response = requests.get(poster_uri)
 
         poster_soup = BeautifulSoup(poster_response.text, 'html.parser')
@@ -101,6 +101,9 @@ def create_website(movies: dict[str, Movie]):
                 display: grid;
                 justify-content: center;
                 gap: 10px;
+                margin: 20px 0;
+                
+                font-size: 1.2em;
             }
 
             .movie {
@@ -114,14 +117,15 @@ def create_website(movies: dict[str, Movie]):
             img.poster {
                 width: 100%;
                 border-radius: 4px;
+                border: 1px solid #ddeeff96;
             }
 
             .liked {
                 display: inline-block;
-                transform: scaleX(1.2);
-                position: absolute;
+                transform: scaleX(1.3);
+                position: relative;
                 bottom: 4px;
-                right: 2px;
+                right: -3px;
             }
 
             .rating {
@@ -149,7 +153,7 @@ def create_website(movies: dict[str, Movie]):
             // Function to calculate the grid layout
             function calculateGridLayout() {
                 const screenWidth = window.innerWidth - 30;
-                const screenHeight = window.innerHeight - 30;
+                const screenHeight = window.innerHeight - 70;
 
                 const elementWidth = 30;
                 const elementHeight = 45;
@@ -245,5 +249,5 @@ def create_website(movies: dict[str, Movie]):
 
 movies = parse_letterboxd_history('export/diary.csv', 'export/likes/films.csv')
 # Set this to whatever month you want
-movies = with_photos(movies, 'https://letterboxd.com/dado3212/films/diary/for/2024/08/')
-create_website(movies)
+movies = with_photos(movies, 'https://letterboxd.com/dado3212/films/diary/for/2025/03/')
+create_website(dict(reversed(movies.items())))
